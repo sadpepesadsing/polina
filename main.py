@@ -41,11 +41,22 @@ class AppController:
     def _on_login_success(self, user):
         access_manager = AccessManager(user)
         if user.role.name == "dean_staff":
-            self.main_window = DeanStaffMainWindow(access_manager, self.data_service, self.schedule_service)
+            self.main_window = DeanStaffMainWindow(
+                access_manager, self.data_service, self.schedule_service, self._logout
+            )
         else:
-            self.main_window = UserMainWindow(self.schedule_service)
+            self.main_window = UserMainWindow(self.schedule_service, self._logout)
         self.main_window.show()
         self.login_window.close()
+
+    def _logout(self):
+        if self.main_window is not None:
+            self.main_window.close()
+            self.main_window = None
+        self.login_window.login_input.clear()
+        self.login_window.password_input.clear()
+        self.login_window.error_label.clear()
+        self.login_window.show()
 
     def run(self):
         self.login_window.show()

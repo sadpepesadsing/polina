@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PyQt6.QtWidgets import QMainWindow, QPushButton, QTabWidget
+from PyQt6.QtWidgets import QHBoxLayout, QMainWindow, QPushButton, QTabWidget, QVBoxLayout, QWidget
 
 from access.access_manager import AccessManager
 from services.data_service import DataService
@@ -13,13 +13,27 @@ def _apply_permission(button: QPushButton, allowed: bool):
 
 
 class DeanStaffMainWindow(QMainWindow):
-    def __init__(self, access_manager: AccessManager, data_service: DataService, schedule_service: ScheduleService):
+    def __init__(
+        self, access_manager: AccessManager, data_service: DataService, schedule_service: ScheduleService, on_logout
+    ):
         super().__init__()
         self.access_manager = access_manager
         self.data_service = data_service
         self.schedule_service = schedule_service
+        self.on_logout = on_logout
         self.setWindowTitle("Электронное расписание — Деканат")
         self.resize(1080, 640)
+        self.setStyleSheet(
+            """
+            QMainWindow, QWidget { background-color: #f7f9fc; font-size: 14px; }
+            QPushButton { background: #2f80ed; color: white; border: none; border-radius: 8px; padding: 8px 14px; }
+            QPushButton:hover { background: #1d6fe0; }
+            QPushButton:disabled { background: #a8b7cc; color: #eef3fb; }
+            QTabWidget::pane { border: 1px solid #dbe3ef; background: white; border-radius: 8px; }
+            QTabBar::tab { background: #ebf1fb; border: 1px solid #d6deea; padding: 8px 12px; margin-right: 4px; border-top-left-radius: 6px; border-top-right-radius: 6px; }
+            QTabBar::tab:selected { background: #ffffff; }
+            """
+        )
 
         tabs = QTabWidget()
         tabs.addTab(self._groups_page(), "Группы")
@@ -29,7 +43,17 @@ class DeanStaffMainWindow(QMainWindow):
         tabs.addTab(self._schedule_approval_page(), "Согласование расписания")
         tabs.addTab(self._schedule_publish_page(), "Публикация расписания")
         tabs.addTab(self._published_schedule_page(), "Просмотр опубликованного расписания")
-        self.setCentralWidget(tabs)
+        logout_btn = QPushButton("Выйти")
+        logout_btn.clicked.connect(self.on_logout)
+        top_row = QHBoxLayout()
+        top_row.addStretch()
+        top_row.addWidget(logout_btn)
+
+        central = QWidget()
+        layout = QVBoxLayout(central)
+        layout.addLayout(top_row)
+        layout.addWidget(tabs)
+        self.setCentralWidget(central)
 
     def _groups_page(self):
         rows = [[g.code, g.curator] for g in self.data_service.get_groups()]
